@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NSW 1080 Baiting Map | Animal Liberation</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
-    
-    <style>
+<!-- Prepared for Squarespace Code Block -->
+<!-- NOTE: external dependencies remain linked due to offline environment -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
+<style>
         /* Design System Variables */
         :root {
             /* VARS UPDATED FOR COALITION AGAINST 1080 POISON BRAND
@@ -365,6 +360,8 @@
         .content-area {
             position: relative;
             background: var(--gray-50);
+            /* ADDED: flexible height for Squarespace embed */
+            min-height: 400px;
         }
         
         .map-loading {
@@ -778,6 +775,11 @@
             height: 100%;
         }
 
+        #al-map {
+            /* ADDED: min-height safeguard for map rendering */
+            min-height: 300px;
+        }
+
         @media (min-width: 769px) {
             .content-area {
                 height: 650px; 
@@ -844,7 +846,8 @@
                 /* grow to fill leftover space */
                 flex: 1 1 auto;
                 flex-basis: 0;
-                min-height: 0;
+                /* ADDED: minimum height to keep map visible */
+                min-height: 400px;
                 /* Provide a stacking context so z-index applies */
                 position: relative;
                 z-index: 2;
@@ -855,6 +858,11 @@
             #map-panel {
                 flex: 1 1 auto;
                 min-height: 0;
+            }
+
+            #map-panel {
+                /* ADDED: ensure map panel keeps a minimum height */
+                min-height: 300px;
             }
 
             /* Place the legend behind the content area so the list can overlay it */
@@ -902,7 +910,7 @@
                 bottom: 20px;
                 left: 50%;
                 transform: translateX(-50%);
-                z-index: 1001;
+                z-index: 1100; /* INCREASED: ensure toggle stays above UI */
                 padding: var(--space-3) var(--space-5);
                 background: var(--al-forest);
                 color: white;
@@ -929,8 +937,6 @@
         }
         /* --- END: Active State CSS --- */
     </style>
-</head>
-<body>
 
 <div class="al-section-background-wrapper" id="interactive-map">
     <div class="al-tracker">
@@ -1734,7 +1740,5 @@
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
-    } 
+    }
 </script>
-</body>
-</html>
