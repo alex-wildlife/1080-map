@@ -1394,24 +1394,45 @@
         setTimeout(initMap, 0);
 
         const mapContainer = elements.mapView;
-        const resizeObserver = new ResizeObserver(() => {
-            if (mapContainer.offsetWidth > 0) {
-                if (state.map) {
+
+        // Some mobile browsers (older Safari/Android) do not support
+        // ResizeObserver. If it isn't available, fall back to a window resize
+        // listener that performs the same duties.
+        if ('ResizeObserver' in window) {
+            const resizeObserver = new ResizeObserver(() => {
+                if (mapContainer.offsetWidth > 0) {
+                    if (state.map) {
+                        state.map.invalidateSize();
+                        // This part only runs once on the initial load to set the view
+                        if (!state.mapInitialized) {
+                            state.map.fitBounds(stateBounds.NSW, { padding: [50, 50]});
+                            applyFilters();
+                            hideLoading();
+                            state.mapInitialized = true; // Flag to prevent re-centering
+                        }
+                    }
+                    // ROBUSTNESS FIX: By removing .disconnect(), this observer will
+                    // now handle all resizes, including toggling the view on mobile.
+                }
+            });
+
+            resizeObserver.observe(mapContainer);
+        } else {
+            const handleResize = () => {
+                if (mapContainer.offsetWidth > 0 && state.map) {
                     state.map.invalidateSize();
-                    // This part only runs once on the initial load to set the view
                     if (!state.mapInitialized) {
                         state.map.fitBounds(stateBounds.NSW, { padding: [50, 50]});
                         applyFilters();
                         hideLoading();
-                        state.mapInitialized = true; // Flag to prevent re-centering
+                        state.mapInitialized = true;
                     }
                 }
-                // ROBUSTNESS FIX: By removing .disconnect(), this observer will
-                // now handle all resizes, including toggling the view on mobile.
-            }
-        });
-
-        resizeObserver.observe(mapContainer);
+            };
+            window.addEventListener('resize', handleResize);
+            // Call once after map init to ensure initial sizing
+            setTimeout(handleResize, 100);
+        }
         setupEventListeners();
         updateMobileToggleButton();
     }
@@ -1717,7 +1738,7 @@
         document.getElementById('start-guide-btn').addEventListener('click', startGuide);
         
         elements.mapView.addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
+            if ((e.ctrlKey || e.metaKey) && state.map) {
                 state.map.scrollWheelZoom.enable();
                 setTimeout(() => state.map.scrollWheelZoom.disable(), 1000);
             }
