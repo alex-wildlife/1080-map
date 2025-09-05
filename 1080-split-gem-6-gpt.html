@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSW 1080 Baiting Map | Animal Liberation</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    
+    <style>
+        /* Design System Variables */
+        :root {
+            /* VARS UPDATED FOR COALITION AGAINST 1080 POISON BRAND
+                RED: #e1442a; ORANGE: #f3a860; BLACK: #1f201f; WHITE: #fefffe
+            */
+            /* Animal Liberation Brand Colors -> Mapped to new brand */
+            --al-forest: #1f201f;     /* Mapped to BLACK */
+            --al-sage: #f3a860;       /* Mapped to ORANGE */
+            --al-sunshine: #f3a860;   /* Mapped to ORANGE (as accent) */
+            --al-coral: #e1442a;      /* Mapped to RED */
+            --al-cream: #fefffe;      /* Mapped to WHITE */
+            
+            /* Semantic Colors (These update automatically from the vars above) */
+            --color-primary: var(--al-forest);
+            --color-secondary: var(--al-sage);
+            --color-accent: var(--al-sunshine);
+            --color-danger: var(--al-coral);
+            --color-success: #4ADE80; /* Retained as universal 'success' color */
+            --color-warning: #FB923C; /* Retained as universal 'warning' color */
+            
+            /* Neutral Palette */
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            
+            /* Typography */
+            --font-sans: 'Poppins', sans-serif;
+            --font-display: 'Georgia', serif;
+            
+            /* Spacing Scale */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+            
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-base: 200ms ease;
+            --transition-slow: 300ms ease;
+        }
+        /* Import Poppins font */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+        
+        /* Global Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /*
+         * Root height definitions
+         *
+         * Without explicitly defining a height on the root elements (html, body)
+         * the viewport-relative measurements used elsewhere (e.g. 100vh) will
+         * collapse when the page is rendered inside a flex container on mobile
+         * browsers. Setting a full height here establishes a height context
+         * for descendant flex elements, preventing the map container from
+         * collapsing to zero height on initial load.
+         */
+        html,
+        body {
+            height: 100%;
+        }
+
+        /* NEW: Wrapper to create the section background color and padding */
+        .al-section-background-wrapper {
+            background-color: #f7f8fa;
+            padding: 4rem 2rem;
+        }
+        
+        /* Container Styles */
+        .al-tracker {
+            font-family: var(--font-sans);
+            color: var(--gray-800);
+            background-color: transparent; /* Set to transparent to show wrapper bg */
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0; /* Remove padding from this element */
+        }
+        
+        @media (max-width: 768px) {
+            .al-section-background-wrapper {
+                padding: 2rem 1rem;
+            }
+        }
+        
+        /* Main Container */
+        .tracker-container {
+            background: white;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            /* MODIFIED: Removed shadow and border to blend into the new background */
+        }
+        
+        /* Header Section */
+        .tracker-header {
+            background: var(--al-forest); /* UPDATED to new brand black */
+            color: white;
+            padding: var(--space-8);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 4px solid var(--al-sage); /* UPDATED to new brand orange */
+        }
+        
+        .tracker-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: rotate(45deg);
+        }
+        
+        .tracker-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0 0 var(--space-2) 0;
+            position: relative;
+            letter-spacing: -0.02em;
+        }
+        
+        .tracker-subtitle {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.125rem;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            line-height: 1.6;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            background: var(--gray-50);
+            padding: var(--space-6);
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: var(--space-6);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--space-4) var(--space-12);
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-full);
+            font-size: 1rem;
+            transition: all var(--transition-base);
+            background: white;
+        }
+        
+        .search-input:hover {
+            border-color: var(--al-sage); /* UPDATED to new brand orange */
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--al-forest); /* UPDATED to new brand black */
+            box-shadow: 0 0 0 3px rgba(31, 32, 31, 0.1); /* UPDATED shadow to match new black */
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            pointer-events: none;
+        }
+        
+        /* Filter Grid */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        
+        .filter-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .filter-select {
+            padding: var(--space-3) var(--space-4);
+            padding-right: var(--space-10);
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            background: white;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right var(--space-3) center;
+            background-size: 1.25rem;
+        }
+        
+        .filter-select:hover {
+            border-color: var(--al-sage); /* UPDATED to new brand orange */
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--al-forest); /* UPDATED to new brand black */
+            box-shadow: 0 0 0 3px rgba(31, 32, 31, 0.1); /* UPDATED shadow to match new black */
+        }
+        
+        /* Results Summary */
+        .results-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--gray-200);
+        }
+        
+        .results-count {
+            font-size: 0.9375rem;
+            color: var(--gray-600);
+        }
+        
+        .results-count strong {
+            color: var(--al-forest); /* UPDATED to new brand black */
+            font-weight: 700;
+        }
+        
+        .clear-filters {
+            padding: var(--space-2) var(--space-4);
+            background: white;
+            border: 2px solid var(--al-coral); /* UPDATED to new brand red */
+            color: var(--al-coral); /* UPDATED to new brand red */
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+        
+        .clear-filters:hover {
+            background: var(--al-coral); /* UPDATED to new brand red */
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* View Controls */
+        .view-controls {
+            background: white;
+            padding: var(--space-4);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end; /* Align controls to the right */
+            align-items: center;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+        }
+        
+        /* Map Controls */
+        .map-controls {
+            display: flex;
+            gap: var(--space-2);
+            align-items: center;
+        }
+        
+        .map-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            padding: 0;
+            border: 2px solid var(--gray-300);
+            background: white;
+            border-radius: var(--radius-md);
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .map-btn:hover {
+            border-color: var(--al-forest); /* UPDATED to new brand black */
+            color: var(--al-forest); /* UPDATED to new brand black */
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-guide {
+            padding: var(--space-2) var(--space-4);
+            background: var(--al-sage); /* UPDATED to new brand orange */
+            color: var(--al-forest); /* UPDATED to new brand black */
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .btn-guide:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            background: #e09447; /* UPDATED: Slightly darker orange for hover */
+        }
+        
+        /* Content Area */
+        .content-area {
+            position: relative;
+            background: var(--gray-50);
+        }
+        
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 3px solid var(--gray-300);
+            border-top-color: var(--al-forest); /* UPDATED to new brand black */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--space-4);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* List View */
+        #al-list-view {
+            background: white;
+        }
+        
+        .list-region-group {
+            margin-bottom: var(--space-3);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            background: white;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .list-region-header {
+            background: var(--al-sage);
+            color: var(--al-forest);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .list-region-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: right var(--transition-slow);
+        }
+        
+        .list-region-header:hover::after {
+            right: 0;
+        }
+        
+        .list-region-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .list-region-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+        
+        .list-region-body {
+            overflow: hidden;
+            transition: height var(--transition-slow) ease;
+            height: 0;
+        }
+        
+        .list-item {
+            border-bottom: 1px solid var(--gray-100);
+            transition: all var(--transition-base);
+        }
+        
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .list-item:hover {
+            background: var(--gray-50);
+        }
+        
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--space-4);
+            margin-bottom: var(--space-2);
+        }
+        
+        .list-item-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--gray-800);
+            margin: 0;
+            line-height: 1.4;
+        }
+        
+        .list-item-badges {
+            display: flex;
+            gap: var(--space-2);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .badge {
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+        
+        /* START POPUP CSS */
+        .leaflet-popup-content-wrapper { 
+            border-radius: var(--radius-lg) !important; 
+            box-shadow: var(--shadow-xl) !important; 
+            padding: 0 !important; 
+            overflow: hidden !important; 
+        }
+        .leaflet-popup-content { 
+            margin: 0 !important; 
+            width: 320px !important; 
+        }
+        .popup-header { 
+            color: white !important; 
+            padding: 1rem !important; 
+            font-weight: 700 !important; 
+            font-size: 0.875rem !important; 
+            text-transform: uppercase !important; 
+            letter-spacing: 0.05em !important; 
+            display: flex !important; 
+            align-items: center !important; 
+            gap: 0.5rem !important; 
+        }
+        .popup-header.direct-profit { 
+            background: var(--al-coral) !important; /* UPDATED to new brand red */
+        }
+        .popup-header.indirect-profit { 
+            background: var(--al-sage) !important; /* UPDATED to new brand orange */
+        }
+        .popup-body { 
+            padding: 1rem !important; 
+            background: white !important; 
+        }
+        .popup-title { 
+            font-size: 1.2rem !important; 
+            font-weight: 700 !important; 
+            color: var(--al-forest) !important; /* UPDATED to new brand black */
+            margin-bottom: 0.5rem !important; 
+        }
+        .popup-meta { 
+            display: flex; 
+            gap: 0.5rem; 
+            margin-bottom: 1rem; 
+            flex-wrap: wrap; 
+        }
+        .popup-badge { 
+            padding: 0.25rem 0.75rem; 
+            border-radius: var(--radius-full); 
+            font-size: 0.75rem !important; 
+            font-weight: 600 !important; 
+        }
+        .popup-badge.type { 
+            background: #E8F5E8; 
+            color: var(--al-forest) !important; /* UPDATED to new brand black */
+            border: 1px solid #C6F6D5; 
+        }
+        .popup-badge.state { 
+            color: white !important; 
+        }
+        .popup-link { 
+            display: inline-block; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            color: var(--al-forest); /* UPDATED to new brand black */
+            text-decoration: none; 
+            border: 1px solid var(--al-sage); /* UPDATED to new brand orange */
+            padding: 0.25rem 0.75rem; 
+            border-radius: 20px; 
+            transition: all 0.2s ease; 
+        }
+        .popup-link:hover { 
+            background-color: var(--al-sage); /* UPDATED to new brand orange */
+            color: var(--al-forest); /* UPDATED to new brand black */
+        }
+        /* END POPUP CSS */
+        
+        /* Legend Section */
+        .legend-section {
+            background: white;
+            padding: var(--space-6);
+            border-top: 1px solid var(--gray-200);
+        }
+        
+        .legend-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0 0 var(--space-5) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-4);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            transition: all var(--transition-base);
+        }
+        
+        .legend-item:hover {
+            border-color: var(--al-sage); /* UPDATED to new brand orange */
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .legend-marker {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .legend-marker.promoted {
+            background: var(--al-coral); /* UPDATED to new brand red */
+        }
+        
+        .legend-marker.listed {
+            background: var(--al-sage); /* UPDATED to new brand orange */
+        }
+        
+        .legend-content {
+            flex: 1;
+        }
+        
+        .legend-label {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--gray-800);
+            margin-bottom: var(--space-1);
+        }
+        
+        .legend-description {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+        
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .tracker-header {
+                padding: var(--space-6);
+            }
+            
+            .tracker-title {
+                font-size: 2rem;
+            }
+            
+            .control-panel {
+                padding: var(--space-4);
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .list-item-header {
+                flex-direction: column;
+                gap: var(--space-3);
+            }
+        }
+
+        @media (min-width: 769px) {
+            .view-controls {
+                position: relative;
+            }
+            #start-guide-btn {
+                /* Center the guide button if there's space */
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        
+        /* Leaflet Control Customization */
+        .leaflet-control-attribution {
+            background: rgba(255, 255, 255, 0.95) !important;
+            padding: var(--space-1) var(--space-2) !important;
+            font-size: 0.75rem !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        
+        /* Focus Styles */
+        button:focus-visible,
+        a:focus-visible,
+        select:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--al-forest); /* UPDATED to new brand black */
+            outline-offset: 2px;
+        }
+
+        /* Accessibility Fix: Style buttons to match original div appearance */
+        .list-region-header, .list-item {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Re-apply original padding and styles to the button content */
+        .list-region-header {
+            padding: var(--space-4) var(--space-5);
+            background: var(--al-sage);
+            color: var(--al-forest);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-base);
+        }
+
+        .list-item {
+            padding: var(--space-4) var(--space-5);
+            position: relative;
+        }
+
+        /* Ensure child spans inside the button behave correctly */
+        .list-item-header {
+            pointer-events: none; /* Prevent text selection on click */
+        }
+        
+        /* --- START: Split View CSS --- */
+        
+        /* * CORE FIX: This container now has height: 100% on all screen sizes,
+         * repairing the height inheritance chain from the flex parent (.content-area)
+         * down to the map element on mobile.
+        */
+        .split-view-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #al-list-view, #al-map {
+            height: 100%;
+        }
+
+        @media (min-width: 769px) {
+            .content-area {
+                height: 650px; 
+            }
+
+            /* Desktop-specific flex behavior */
+            .split-view-container {
+                display: flex;
+            }
+
+            #list-panel {
+                flex: 0 0 400px; 
+                height: 100%;
+                border-right: 1px solid var(--gray-200);
+                background: white;
+                overflow-y: auto;
+                /* IMPROVEMENT: Padding is now on the panel for a cleaner scrollbar */
+                padding: var(--space-4);
+            }
+
+            #map-panel {
+                flex: 1; 
+                height: 100%;
+            }
+
+            .view-toggle-mobile {
+                display: none;
+            }
+        }
+        /* --- END: Split View CSS --- */
+
+        /* --- START: Mobile View CSS --- */
+        @media (max-width: 768px) {
+            /*
+             * Mobile layout adjustments
+             *
+             * The page is structured as a set of stacked sections: header,
+             * controls, view toggles, content (map/list) and legend. On small
+             * screens the height of these sections can exceed the height of the
+             * viewport. To ensure the map/list area always receives a share of
+             * the available space, we convert the entire tracker container and
+             * its ancestors into a flex column that stretches to fill the
+             * viewport. The content area then flexes to occupy the remaining
+             * space while allowing its children (#map-panel and #list-panel)
+             * to expand.
+             */
+            .al-section-background-wrapper,
+            .al-tracker,
+            .tracker-container {
+                display: flex;
+                flex-direction: column;
+                /* allow the element to grow and shrink as needed */
+                flex: 1 1 auto;
+                height: 100%;
+                min-height: 0;
+            }
+
+            /* Ensure siblings inside tracker-container do not collapse the content area */
+            .tracker-container > * {
+                flex-shrink: 0;
+            }
+
+            .content-area {
+                /* grow to fill leftover space */
+                flex: 1 1 auto;
+                flex-basis: 0;
+                min-height: 0;
+                /* Provide a stacking context so z-index applies */
+                position: relative;
+                z-index: 2;
+            }
+
+            /* Each panel inside the content area should participate in flex growth */
+            #list-panel,
+            #map-panel {
+                flex: 1 1 auto;
+                min-height: 0;
+            }
+
+            /* Place the legend behind the content area so the list can overlay it */
+            .legend-section {
+                position: relative;
+                z-index: 1;
+            }
+
+            /* When viewing the list on mobile, hide the legend entirely to
+             * prevent it from overlaying the list. The list is already
+             * available through the collapsible sections within #al-list-view
+             * and the legend is not needed in this mode.
+             */
+            body.viewing-list .legend-section {
+                display: none;
+            }
+
+            /* Original mobile styles for map/list visibility */
+            #list-panel {
+                display: none;
+                height: 100%;
+                overflow-y: auto;
+                padding: var(--space-4);
+            }
+            #map-panel {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            body.viewing-list #list-panel {
+                display: block;
+            }
+            body.viewing-list #map-panel {
+                display: none;
+            }
+
+            /* Original mobile toggle button styles */
+            .view-toggle-mobile {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: var(--space-2);
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1001;
+                padding: var(--space-3) var(--space-5);
+                background: var(--al-forest);
+                color: white;
+                border: none;
+                border-radius: var(--radius-full);
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: var(--shadow-lg);
+                transition: all var(--transition-base);
+                width: 160px;
+            }
+            .view-toggle-mobile:hover {
+                transform: translateX(-50%) translateY(-2px);
+            }
+        }
+        /* --- END: Mobile View CSS --- */
+
+        /* --- START: Active State CSS --- */
+        .list-item.active {
+            background-color: var(--gray-100);
+            border-left: 4px solid var(--al-forest);
+            padding-left: calc(var(--space-5) - 4px); 
+        }
+        /* --- END: Active State CSS --- */
+    </style>
+</head>
+<body>
+
+<div class="al-section-background-wrapper" id="interactive-map">
+    <div class="al-tracker">
+        <div class="tracker-container">
+            <header class="tracker-header">
+                <h1 class="tracker-title">NSW 1080 Baiting Map</h1>
+                <p class="tracker-subtitle">
+                    The NSW Government continues to deploy 1080 poison baits across National Parks and Reserves, threatening native wildlife and companion animals.
+                </p>
+                <p class="tracker-subtitle" style="margin-top: 1rem;">
+                    <strong>Explore the upcoming baiting programs scheduled across the state on the interactive map below.</strong>
+                </p>
+            </header>
+            
+            <div class="control-panel">
+                <div class="search-container">
+                    <svg aria-hidden="true" class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="search-input" 
+                        placeholder="Search by park name, region, or target species..."
+                        aria-label="Search baiting programs"
+                    >
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label" for="region-filter">Region</label>
+                        <select class="filter-select" id="region-filter" aria-label="Filter by region">
+                            <option value="all">All Regions</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="state-filter">State</label>
+                        <select class="filter-select" id="state-filter" aria-label="Filter by state or territory" disabled>
+                            <option value="NSW">New South Wales</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label" for="type-filter">Baiting Method</label>
+                        <select class="filter-select" id="type-filter" aria-label="Filter by baiting method">
+                            <option value="all">All Baiting Methods</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="results-summary">
+                    <div class="results-count" id="results-count" role="status" aria-live="polite">
+                        Loading programs...
+                    </div>
+                    <button class="clear-filters hidden" id="clear-filters" aria-label="Clear all filters">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+            
+            <div class="view-controls">
+                <button class="view-toggle-mobile" id="mobile-view-toggle">
+                    </button>
+
+                <div class="map-controls">
+                    <button class="map-btn" id="zoom-in-btn" aria-label="Zoom in">+</button>
+                    <button class="map-btn" id="zoom-out-btn" aria-label="Zoom out">−</button>
+                    <button class="map-btn" id="home-btn" aria-label="Reset view">⌂</button>
+                    <button class="btn-guide" id="start-guide-btn" aria-label="Start guided tour">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        Guide
+                    </button>
+                </div>
+            </div>
+            
+            <div class="content-area">
+                <div class="split-view-container">
+                    
+                    <div id="list-panel">
+                        <div id="al-list-view" role="region" aria-label="Baiting Program List"></div>
+                    </div>
+
+                    <div id="map-panel">
+                        <div id="al-map" role="region" aria-label="Interactive Baiting Map">
+                            <div class="map-loading" id="map-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading map data...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="legend-section">
+                <h2 class="legend-title">
+                    <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                    Legend
+                </h2>
+                <div class="legend-grid">
+                    <div class="legend-item">
+                        <div class="legend-marker" style="background:#e1442a;">
+                            ✈️
+                        </div>
+                        <div class="legend-content">
+                            <div class="legend-label">Aerial Baiting</div>
+                            <div class="legend-description">
+                                Sites where 1080 baits are dropped by aircraft.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker" style="background:#f3a860;">
+                            💀
+                        </div>
+                        <div class="legend-content">
+                            <div class="legend-label">Ground Baiting</div>
+                            <div class="legend-description">
+                                Sites where 1080 baits are laid manually on the ground.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker" style="background:#9CA3AF;">
+                            🐾
+                        </div>
+                        <div class="legend-content">
+                            <div class="legend-label">Unknown / Other</div>
+                            <div class="legend-description">
+                                Sites where the delivery method is not specified.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+
+<script>
+    // Application State
+    const state = {
+        map: null,
+        markers: [],
+        mobileView: 'map', // Tracks the current view on mobile: 'map' or 'list'
+        activeListItemId: null, // Tracks the ID of the currently selected item
+        attractionData: [],
+        filteredData: [],
+        isLoading: true,
+        mapInitialized: false // Flag to ensure fitBounds only runs once on load
+    };
+    
+    // State Boundaries
+    const stateBounds = {
+        'all': [[-10.0, 113.0], [-44.0, 154.0]],
+        'NSW': [[-28.15, 140.99], [-37.5, 153.99]],
+        'VIC': [[-33.98, 140.96], [-39.2, 150.0]],
+        'QLD': [[-9.23, 138.0], [-29.18, 153.55]],
+        'WA': [[-13.68, 112.92], [-35.13, 129.0]],
+        'SA': [[-25.99, 129.0], [-38.06, 141.0]],
+        'TAS': [[-39.6, 143.8], [-43.6, 148.4]],
+        'NT': [[-10.9, 129.0], [-26.0, 138.0]],
+        'ACT': [[-35.1, 148.7], [-35.9, 149.4]]
+    };
+    
+    // DOM Elements
+    const elements = {
+        mapView: document.getElementById('al-map'),
+        listView: document.getElementById('al-list-view'),
+        mobileViewToggle: document.getElementById('mobile-view-toggle'),
+        searchInput: document.getElementById('search-input'),
+        stateFilter: document.getElementById('state-filter'),
+        typeFilter: document.getElementById('type-filter'),
+        regionFilter: document.getElementById('region-filter'),
+        resultsCount: document.getElementById('results-count'),
+        clearFilters: document.getElementById('clear-filters'),
+        mapLoading: document.getElementById('map-loading')
+    };
+    
+    // Full Data - This would be populated by your data array
+    const attractionData = [{"id":1,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Abercrombie River National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/abercrombie-river-national-park/local-alerts","lat":-34.10907524,"lng":149.6991222,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":2,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Abercrombie River National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/abercrombie-river-national-park/local-alerts","lat":-34.11132,"lng":149.721944,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":3,"state":"NSW","region":"Sydney and Surrounds","name":"Abercrombie River State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/abercrombie-river-state-conservation-area","lat":-34.05494229,"lng":149.6899165,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":4,"state":"NSW","region":"Sydney and Surrounds","name":"Abercrombie River State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/abercrombie-river-state-conservation-area","lat":-34.049133,"lng":149.667808,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":5,"state":"NSW","region":"Country NSW","name":"Araluen Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/araluen-nature-reserve","lat":-35.63915201,"lng":149.7635641,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":6,"state":"NSW","region":"Country NSW","name":"Avisford Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/avisford-nature-reserve","lat":-32.668573,"lng":149.570014,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":7,"state":"NSW","region":"Snowy Mountains","name":"Badja Swamps Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/badja-swamps-nature-reserve","lat":-36.03109704,"lng":149.5421866,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2025","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":8,"state":"NSW","region":"North Coast","name":"Bagul Waajaarr Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bagul-waajaarr-nature-reserve","lat":-30.30464411,"lng":152.53901,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":9,"state":"NSW","region":"North Coast","name":"Bagul Waajaarr Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bagul-waajaarr-nature-reserve","lat":-30.306737,"lng":152.536999,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":10,"state":"NSW","region":"Country NSW","name":"Bald Rock National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bald-rock-national-park","lat":-28.839449,"lng":152.092289,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":11,"state":"NSW","region":"Country NSW","name":"Bald Rock National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bald-rock-national-park","lat":-28.848908,"lng":152.090713,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":12,"state":"NSW","region":"Country NSW","name":"Bangadilly National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bangadilly-national-park","lat":-34.455889,"lng":150.180712,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Glenbrook","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":13,"state":"NSW","region":"Country NSW","name":"Bango Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bango-nature-reserve","lat":-34.74800042,"lng":148.9898206,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 July 2025","programEnd":"12 February 2026","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":14,"state":"NSW","region":"North Coast","name":"Banyabba Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/banyabba-nature-reserve","lat":-29.36450673,"lng":152.8938941,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":15,"state":"NSW","region":"North Coast","name":"Banyabba Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/banyabba-nature-reserve","lat":-29.364686,"lng":152.883542,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":16,"state":"NSW","region":"North Coast","name":"Banyabba State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/banyabba-state-conservation-area","lat":-29.36232418,"lng":152.9549411,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":17,"state":"NSW","region":"North Coast","name":"Banyabba State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/banyabba-state-conservation-area","lat":-29.370848,"lng":152.961786,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":18,"state":"NSW","region":"Country NSW","name":"Bargo State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bargo-state-conservation-area","lat":-34.317465,"lng":150.47841,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Glenbrook","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":19,"state":"NSW","region":"Country NSW","name":"Barool National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/barool-national-park","lat":-29.641995,"lng":152.204007,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":20,"state":"NSW","region":"Country NSW","name":"Barool National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/barool-national-park","lat":-29.644238,"lng":152.203342,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":21,"state":"NSW","region":"South Coast","name":"Barren Grounds Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/barren-grounds-nature-reserve","lat":-34.69108332,"lng":150.7255594,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"17 July 2025","programEnd":"16 January 2026","contactOffice":"Fitzroy Falls","contactPhone":"(02) 4887 8244","contactEmail":"npws.illawarrahighlands@environment.nsw.gov.au"},
+    {"id":22,"state":"NSW","region":"North Coast / Country NSW","name":"Barrington Tops National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/barrington-tops-national-park","lat":-32.04829597,"lng":151.5107074,"sellsTickets":"No","meetsWelfare":"Cats","programStart":"28 March 2025","programEnd":"19 September 2025","contactOffice":"Barrington Tops","contactPhone":"(02) 6538 5300","contactEmail":"npws.barringtontops@environment.nsw.gov.au"},
+    {"id":23,"state":"NSW","region":"Country NSW","name":"Basket Swamp National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/basket-swamp-national-park","lat":-28.934447,"lng":152.153491,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":24,"state":"NSW","region":"Country NSW","name":"Basket Swamp National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/basket-swamp-national-park","lat":-28.939451,"lng":152.152979,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":25,"state":"NSW","region":"South Coast / Country NSW","name":"Bees Nest Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bees-nest-nature-reserve","lat":-34.69108332,"lng":150.7255594,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":26,"state":"NSW","region":"Country NSW","name":"Belmount Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/belmount-nature-reserve","lat":-34.906794,"lng":149.283691,"sellsTickets":"No","meetsWelfare":"Pigs","programStart":"2 September 2025","programEnd":"16 September 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":27,"state":"NSW","region":"Country NSW","name":"Beni State Conservation Area","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/beni-state-conservation-area","lat":-34.69108332,"lng":150.7255594,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"15 August 2025","programEnd":"15 February 2026","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":28,"state":"NSW","region":"South Coast","name":"Beowa National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/beowa-national-park","lat":-37.19190746,"lng":149.986805,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":29,"state":"NSW","region":"Country NSW","name":"Berlang State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/berlang-state-conservation-area","lat":-35.67847763,"lng":149.7036772,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":30,"state":"NSW","region":"Country NSW / Snowy Mountains","name":"Bimberi Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bimberi-nature-reserve","lat":-35.5395277,"lng":148.7494642,"sellsTickets":"No","meetsWelfare":"Dingoes","programStart":"3 March 2025","programEnd":"2 September 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":31,"state":"NSW","region":"North Coast","name":"Bindarri National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bindarri-national-park","lat":-30.2967227,"lng":152.9296542,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":32,"state":"NSW","region":"North Coast","name":"Bindarri National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bindarri-national-park","lat":-30.292023,"lng":153.015263,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":33,"state":"NSW","region":"Murray-Riverina / Country NSW","name":"Black Andrew Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/black-andrew-nature-reserve","lat":-35.04663513,"lng":148.5851607,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"11 March 2025","programEnd":"11 September 2025","contactOffice":"Tumut","contactPhone":"(02) 6947 7000","contactEmail":"tumutrvc@environment.nsw.gov.au"},
+    {"id":34,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Blue Mountains National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/blue-mountains-national-park","lat":-33.86544828,"lng":150.474427,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":35,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Blue Mountains National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/blue-mountains-national-park","lat":-33.59529,"lng":150.536524,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":36,"state":"NSW","region":"Country NSW","name":"Bluff River Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bluff-river-nature-reserve","lat":-29.188917,"lng":151.97203,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"22 July 2025","programEnd":"5 September 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":37,"state":"NSW","region":"Country NSW","name":"Bluff River Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bluff-river-nature-reserve","lat":-29.197454,"lng":151.963789,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":38,"state":"NSW","region":"Country NSW","name":"Bluff River Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bluff-river-nature-reserve","lat":-29.172879,"lng":151.980596,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":39,"state":"NSW","region":"Snowy Mountains","name":"Bogandyera Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bogandyera-nature-reserve","lat":-35.88785941,"lng":147.8815906,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"24 August 2025","programEnd":"24 February 2026","contactOffice":"Khancoban","contactPhone":"(02) 6070 8400","contactEmail":"info.khancoban@environment.nsw.gov.au"},
+    {"id":40,"state":"NSW","region":"Country NSW","name":"Bolivia Hill Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bolivia-hill-nature-reserve","lat":-29.34075,"lng":151.909195,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":41,"state":"NSW","region":"Country NSW","name":"Bolivia Hill Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bolivia-hill-nature-reserve","lat":-29.345425,"lng":151.906476,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":42,"state":"NSW","region":"Snowy Mountains","name":"Bondi Gulf Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bondi-gulf-nature-reserve","lat":-37.101463,"lng":149.255275,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":43,"state":"NSW","region":"Snowy Mountains","name":"Bondi Gulf Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bondi-gulf-nature-reserve","lat":-37.09450969,"lng":149.271993,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"14 April 2025","programEnd":"30 September 2025","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":44,"state":"NSW","region":"North Coast","name":"Bongil Bongil National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bongil-bongil-national-park","lat":-30.418876,"lng":153.025804,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"22 August 2025","programEnd":"28 February 2026","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":45,"state":"NSW","region":"Country NSW","name":"Boonoo Boonoo National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/boonoo-boonoo-national-park","lat":-28.822381,"lng":152.156564,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":46,"state":"NSW","region":"Country NSW","name":"Boonoo Boonoo National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/boonoo-boonoo-national-park","lat":-28.818582,"lng":152.16238,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":47,"state":"NSW","region":"South Coast","name":"Bournda National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bournda-national-park","lat":-36.75519717,"lng":149.9686417,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":48,"state":"NSW","region":"South Coast","name":"Bournda Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bournda-nature-reserve","lat":-36.812761,"lng":149.8734632,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":49,"state":"NSW","region":"Country NSW / Snowy Mountains","name":"Brindabella National Park","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/brindabella-national-park","lat":-35.24000929,"lng":148.7850091,"sellsTickets":"No","meetsWelfare":"Dingoes","programStart":"3 March 2025","programEnd":"2 September 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":50,"state":"NSW","region":"South Coast / Country NSW","name":"Budawang National Park","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/budawang-national-park","lat":-35.39721338,"lng":150.0764472,"sellsTickets":"No","meetsWelfare":"Dingoes","programStart":"25 June 2025","programEnd":"31 October 2025","contactOffice":"Ulladulla","contactPhone":"(02) 4454 9500","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":51,"state":"NSW","region":"South Coast / Country NSW","name":"Budderoo National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/budderoo-national-park","lat":-34.66789918,"lng":150.6497465,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"17 July 2025","programEnd":"16 January 2026","contactOffice":"Fitzroy Falls","contactPhone":"(02) 4887 8244","contactEmail":"npws.illawarrahighlands@environment.nsw.gov.au"},
+    {"id":52,"state":"NSW","region":"Country NSW","name":"Budelah Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/budelah-nature-reserve","lat":-28.81424304,"lng":149.2616364,"sellsTickets":"No","meetsWelfare":"Pigs","programStart":"3 May 2025","programEnd":"31 December 2025","contactOffice":"Barwon","contactPhone":"(02) 6792 7300","contactEmail":"npws.barwon@environment.nsw.gov.au"},
+    {"id":53,"state":"NSW","region":"South Coast","name":"Bugong National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bugong-national-park","lat":-34.80859215,"lng":150.4610119,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"28 July 2025","programEnd":"1 August 2026","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":54,"state":"NSW","region":"North Coast","name":"Bundjalung National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bundjalung-national-park","lat":-29.23458818,"lng":153.3261108,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":55,"state":"NSW","region":"North Coast","name":"Bundjalung National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bundjalung-national-park","lat":-29.345321,"lng":153.292186,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":56,"state":"NSW","region":"North Coast","name":"Bundjalung National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/bundjalung-national-park","lat":-29.353584,"lng":153.296295,"sellsTickets":"No","meetsWelfare":"Cats","programStart":"1 April 2025","programEnd":"1 October 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":57,"state":"NSW","region":"Sydney and Surrounds","name":"Burragorang State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/burragorang-state-conservation-area/local-alerts","lat":-34.026435,"lng":150.473187,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Glenbrook","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":58,"state":"NSW","region":"Murray-Riverina / Country NSW","name":"Burrinjuck Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/burrinjuck-nature-reserve","lat":-34.961635,"lng":148.597401,"sellsTickets":"No","meetsWelfare":"Pigs","programStart":"26 August 2025","programEnd":"9 September 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":59,"state":"NSW","region":"Murray-Riverina / Country NSW","name":"Burrinjuck Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/burrinjuck-nature-reserve","lat":-34.962545,"lng":148.599645,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"12 August 2025","programEnd":"12 February 2026","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":60,"state":"NSW","region":"Country NSW","name":"Butterleaf National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/butterleaf-national-park","lat":-29.53406,"lng":152.034097,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":61,"state":"NSW","region":"Country NSW","name":"Butterleaf National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/butterleaf-national-park","lat":-29.538131,"lng":152.035326,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":62,"state":"NSW","region":"Country NSW","name":"Butterleaf State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/butterleaf-state-conservation-area/local-alerts","lat":-29.529363,"lng":152.072192,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":63,"state":"NSW","region":"Country NSW","name":"Butterleaf State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/butterleaf-state-conservation-area/local-alerts","lat":-29.531817,"lng":152.070017,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":64,"state":"NSW","region":"South Coast","name":"Cambewarra Range Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cambewarra-range-nature-reserve","lat":-34.77219458,"lng":150.5480467,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"28 July 2025","programEnd":"1 August 2026","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":65,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Capertree National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/capertee-national-park/local-alerts","lat":-33.035722,"lng":150.03376,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":66,"state":"NSW","region":"Country NSW","name":"Capoompeta National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/capoompeta-national-park","lat":-29.407391,"lng":152.016548,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":67,"state":"NSW","region":"Country NSW","name":"Capoompeta National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/capoompeta-national-park","lat":-29.408915,"lng":152.014767,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":68,"state":"NSW","region":"Country NSW","name":"Captains Creek Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/captains-creek-nature-reserve","lat":-28.5384228,"lng":152.3298294,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kyogle","contactPhone":"(02) 6632 0000","contactEmail":"npws.richmondriver@environment.nsw.gov.au"},
+    {"id":69,"state":"NSW","region":"Country NSW","name":"Captains Creek Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/captains-creek-nature-reserve","lat":-28.5384228,"lng":152.3298294,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kyogle","contactPhone":"(02) 6632 0000","contactEmail":"npws.richmondriver@environment.nsw.gov.au"},
+    {"id":70,"state":"NSW","region":"North Coast / Country NSW","name":"Carrai National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/carrai-national-park","lat":-30.88209329,"lng":152.2531231,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Walcha","contactPhone":"(02) 6777 4700","contactEmail":"npws.nea@environment.nsw.gov.au"},
+    {"id":71,"state":"NSW","region":"North Coast / Country NSW","name":"Carrai National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/carrai-national-park","lat":-30.88209329,"lng":152.2531231,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Walcha","contactPhone":"(02) 6777 4700","contactEmail":"npws.nea@environment.nsw.gov.au"},
+    {"id":72,"state":"NSW","region":"North Coast","name":"Carrai State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/carrai-state-conservation-area","lat":-30.87077468,"lng":152.3019139,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Walcha","contactPhone":"(02) 6777 4700","contactEmail":"npws.nea@environment.nsw.gov.au"},
+    {"id":73,"state":"NSW","region":"North Coast","name":"Carrai State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/carrai-state-conservation-area","lat":-30.87077468,"lng":152.3019139,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Walcha","contactPhone":"(02) 6777 4700","contactEmail":"npws.nea@environment.nsw.gov.au"},
+    {"id":74,"state":"NSW","region":"North Coast","name":"Cascade National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cascade-national-park","lat":-30.26674592,"lng":152.8072023,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":75,"state":"NSW","region":"North Coast","name":"Cascade National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cascade-national-park","lat":-30.26674592,"lng":152.8072023,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":76,"state":"NSW","region":"Country NSW","name":"Cathedral Rock National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cathedral-rock-national-park/local-alerts","lat":-30.445578,"lng":152.25001,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":77,"state":"NSW","region":"Country NSW","name":"Cathedral Rock National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cathedral-rock-national-park/local-alerts","lat":-30.445578,"lng":152.25001,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":78,"state":"NSW","region":"North Coast","name":"Chaelundi National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/chaelundi-national-park","lat":-29.94016619,"lng":152.5016963,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":79,"state":"NSW","region":"North Coast","name":"Chaelundi National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/chaelundi-national-park","lat":-29.94016619,"lng":152.5016963,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":80,"state":"NSW","region":"North Coast","name":"Chaelundi State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/chaelundi-state-conservation-area","lat":-29.93099499,"lng":152.4331077,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":81,"state":"NSW","region":"North Coast","name":"Chaelundi State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/chaelundi-state-conservation-area","lat":-29.93099499,"lng":152.4331077,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":82,"state":"NSW","region":"Snowy Mountains","name":"Clarkes Hill Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/clarkes-hill-nature-reserve","lat":-35.87577581,"lng":148.1490219,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"24 August 2025","programEnd":"24 February 2026","contactOffice":"Khancoban","contactPhone":"(02) 6070 8400","contactEmail":"info.khancoban@environment.nsw.gov.au"},
+    {"id":83,"state":"NSW","region":"South Coast","name":"Colymea State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/colymea-state-conservation-area","lat":-34.93295719,"lng":150.4785325,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":84,"state":"NSW","region":"South Coast","name":"Comerong Island Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/comerong-island-nature-reserve","lat":-34.88726,"lng":150.7406,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"21 December 2025","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":85,"state":"NSW","region":"South Coast","name":"Conjola National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/conjola-national-park","lat":-35.19051236,"lng":150.5091575,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":86,"state":"NSW","region":"South Coast","name":"Conjola National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/conjola-national-park","lat":-35.19051236,"lng":150.5091575,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"21 December 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":87,"state":"NSW","region":"Snowy Mountains","name":"Coolumbooka Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/coolumbooka-nature-reserve","lat":-36.9125944,"lng":149.3283832,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":88,"state":"NSW","region":"Snowy Mountains","name":"Coolumbooka Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/coolumbooka-nature-reserve","lat":-36.9125944,"lng":149.3283832,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"14 April 2025","programEnd":"30 September 2025","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":89,"state":"NSW","region":"North Coast / Country NSW","name":"Cottan-Bimbang National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cottanbimbang-national-park","lat":-31.32053802,"lng":152.1110815,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":90,"state":"NSW","region":"North Coast / Country NSW","name":"Cottan-Bimbang National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cottanbimbang-national-park","lat":-31.32053802,"lng":152.1110815,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":91,"state":"NSW","region":"North Coast / Country NSW","name":"Cunnawarra National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cunnawarra-national-park","lat":-30.73079375,"lng":152.1482232,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":92,"state":"NSW","region":"North Coast / Country NSW","name":"Cunnawarra National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/cunnawarra-national-park","lat":-30.73079375,"lng":152.1482232,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":93,"state":"NSW","region":"Country NSW","name":"Dapper Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/dapper-nature-reserve/local-alerts","lat":-32.28392,"lng":149.201759,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":94,"state":"NSW","region":"South Coast / Country NSW / Snowy Mountains","name":"Deua National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/deua-national-park","lat":-35.94746154,"lng":149.8042745,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2025","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":95,"state":"NSW","region":"Sydney and Surrounds","name":"Dharug National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/dharug-national-park/local-alerts","lat":-33.382527,"lng":151.070427,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Bulga","contactPhone":"(02) 6574 5555","contactEmail":"npws.wollemiyengo@environment.nsw.gov.au"},
+    {"id":96,"state":"NSW","region":"North Coast","name":"Dorrigo National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/dorrigo-national-park","lat":-30.3375034,"lng":152.8311475,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":97,"state":"NSW","region":"North Coast","name":"Dorrigo National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/dorrigo-national-park","lat":-30.3375034,"lng":152.8311475,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":98,"state":"NSW","region":"North Coast","name":"Dunggir National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/dunggir-national-park","lat":-30.66966848,"lng":152.676013,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":99,"state":"NSW","region":"North Coast","name":"Dunggir National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/dunggir-national-park","lat":-30.66966848,"lng":152.676013,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":100,"state":"NSW","region":"Country NSW","name":"Durridgere State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/durridgere-state-conservation-area","lat":-32.125976,"lng":149.876397,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":101,"state":"NSW","region":"South Coast","name":"Eurobodalla National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/eurobodalla-national-park","lat":-36.12713052,"lng":150.1193354,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":102,"state":"NSW","region":"Sydney and Surrounds","name":"Gardens of Stone National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gardens-of-stone-national-park/local-alerts","lat":-33.186847,"lng":150.086376,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":103,"state":"NSW","region":"Sydney and Surrounds","name":"Garigal National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/garigal-national-park","lat":-33.72483534,"lng":151.1889588,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 August 2025","programEnd":"31 January 2026","contactOffice":"Forestville","contactPhone":"(02) 9451 3479","contactEmail":"npws.sydneynorth@environment.nsw.gov.au"},
+    {"id":104,"state":"NSW","region":"North Coast / Country NSW","name":"Gibraltar Range National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gibraltar-range-national-park/local-alerts","lat":-29.535117,"lng":152.340046,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":105,"state":"NSW","region":"North Coast / Country NSW","name":"Gibraltar Range National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gibraltar-range-national-park/local-alerts","lat":-29.535117,"lng":152.340046,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":106,"state":"NSW","region":"Country NSW","name":"Girralang Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/girralang-nature-reserve","lat":-33.14641149,"lng":149.2753136,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"11 May 2025","programEnd":"10 November 2025","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":107,"state":"NSW","region":"Country NSW","name":"Goobang National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/goobang-national-park","lat":-33.00832037,"lng":148.4843102,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 September 2025","programEnd":"28 February 2026","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":108,"state":"NSW","region":"Country NSW","name":"Goodiman State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/goodiman-state-conservation-area","lat":-32.222913,"lng":149.376392,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":109,"state":"NSW","region":"Country NSW","name":"Goulburn River National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/goulburn-river-national-park","lat":-32.301519,"lng":150.145552,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":110,"state":"NSW","region":"Country NSW / Snowy Mountains","name":"Gourock National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gourock-national-park","lat":-35.93321331,"lng":149.5221246,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"Ongoing","programEnd":"1 December 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":111,"state":"NSW","region":"North Coast","name":"Gumbaynggirr State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gumbaynggirr-state-conservation-area","lat":-30.61537351,"lng":152.64174,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":112,"state":"NSW","region":"North Coast","name":"Gumbaynggirr State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gumbaynggirr-state-conservation-area","lat":-30.61537351,"lng":152.64174,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":113,"state":"NSW","region":"Country NSW","name":"Guula Ngurra National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/guula-ngurra-national-park","lat":-34.395453,"lng":150.138663,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Glenbrook","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":114,"state":"NSW","region":"North Coast / Country NSW","name":"Guy Fawkes River National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/guy-fawkes-river-national-park","lat":-30.036377,"lng":152.242605,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":115,"state":"NSW","region":"North Coast / Country NSW","name":"Guy Fawkes River National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/guy-fawkes-river-national-park","lat":-30.036377,"lng":152.242605,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":116,"state":"NSW","region":"Country NSW","name":"Guy Fawkes River Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/guy-fawkes-river-nature-reserve","lat":-30.362944,"lng":152.284095,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":117,"state":"NSW","region":"Country NSW","name":"Guy Fawkes River Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/guy-fawkes-river-nature-reserve","lat":-30.362944,"lng":152.284095,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":118,"state":"NSW","region":"Country NSW","name":"Gwydir Wetlands State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/gwydir-wetlands-state-conservation-area","lat":-29.304698,"lng":149.299475,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"1 July 2025","programEnd":"31 December 2025","contactOffice":"Barwon","contactPhone":"(02) 6738 9113","contactEmail":"npws.barwon@environment.nsw.gov.au"},
+    {"id":119,"state":"NSW","region":"Sydney and Surrounds","name":"Jenolan Karst Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jenolan-karst-conservation-reserve","lat":-33.820822,"lng":150.021059,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":120,"state":"NSW","region":"Sydney and Surrounds","name":"Jenolan Karst Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jenolan-karst-conservation-reserve","lat":-33.820822,"lng":150.021059,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":121,"state":"NSW","region":"South Coast","name":"Jerrawangala National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jerrawangala-national-park","lat":-35.04651527,"lng":150.4632128,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":122,"state":"NSW","region":"South Coast","name":"Jervis Bay National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jervis-bay-national-park","lat":-35.047942,"lng":150.667512,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"19 December 2025","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":123,"state":"NSW","region":"Snowy Mountains","name":"Jingellic Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jingellic-nature-reserve","lat":-35.90059807,"lng":147.7661767,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"24 August 2025","programEnd":"24 February 2026","contactOffice":"Khancoban","contactPhone":"(02) 6070 8400","contactEmail":"info.khancoban@environment.nsw.gov.au"},
+    {"id":124,"state":"NSW","region":"Country NSW","name":"Joadja Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/joadja-nature-reserve","lat":-34.35522,"lng":150.205527,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Glenbrook","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":125,"state":"NSW","region":"North Coast","name":"Jobs Mountain Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jobs-mountain-nature-reserve","lat":-30.73401527,"lng":152.3650542,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":126,"state":"NSW","region":"North Coast","name":"Jobs Mountain Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/jobs-mountain-nature-reserve","lat":-30.73401527,"lng":152.3650542,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":127,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Kanangra-Boyd National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kanangraboyd-national-park","lat":-34.05989579,"lng":150.0679901,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":128,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Kanangra-Boyd National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kanangraboyd-national-park","lat":-34.05989579,"lng":150.0679901,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":129,"state":"NSW","region":"South Coast","name":"Kangaroo River Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kangaroo-river-nature-reserve","lat":-34.72887342,"lng":150.5074905,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"28 July 2025","programEnd":"1 August 2026","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":130,"state":"NSW","region":"Country NSW","name":"Kings Plains National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kings-plains-national-park","lat":-29.590921,"lng":151.357233,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":131,"state":"NSW","region":"Country NSW","name":"Kings Plains National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kings-plains-national-park","lat":-29.590921,"lng":151.357233,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":132,"state":"NSW","region":"Sydney and Surrounds","name":"Koolewong Flora Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/koolewong-flora-reserve","lat":-33.254034,"lng":151.111261,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Bulga","contactPhone":"(02) 6574 5555","contactEmail":"npws.wollemiyengo@environment.nsw.gov.au"},
+    {"id":133,"state":"NSW","region":"South Coast","name":"Kooraban National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kooraban-national-park","lat":-36.31806618,"lng":149.921855,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":134,"state":"NSW","region":"Snowy Mountains","name":"Kosciuszko National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kosciuszko-national-park","lat":-36.13734922,"lng":148.2938293,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"24 August 2025","programEnd":"24 February 2026","contactOffice":"Khancoban","contactPhone":"(02) 6070 8400","contactEmail":"info.khancoban@environment.nsw.gov.au"},
+    {"id":135,"state":"NSW","region":"Snowy Mountains","name":"Kosciuszko National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kosciuszko-national-park","lat":-36.13734922,"lng":148.2938293,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"1 September 2025","programEnd":"28 February 2026","contactOffice":"Tumut","contactPhone":"(02) 6947 7000","contactEmail":"tumutrvc@environment.nsw.gov.au"},
+    {"id":136,"state":"NSW","region":"Snowy Mountains","name":"Kosciuszko National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kosciuszko-national-park","lat":-36.13734922,"lng":148.2938293,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"7 August 2025","programEnd":"5 February 2026","contactOffice":"Jindabyne","contactPhone":"(02) 6450 5600","contactEmail":"srvc@environment.nsw.gov.au"},
+    {"id":137,"state":"NSW","region":"Snowy Mountains","name":"Kosciuszko National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kosciuszko-national-park","lat":-36.13734922,"lng":148.2938293,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"30 June 2025","programEnd":"28 September 2025","contactOffice":"Jindabyne","contactPhone":"(02) 6450 5600","contactEmail":"srvc@environment.nsw.gov.au"},
+    {"id":138,"state":"NSW","region":"Snowy Mountains","name":"Kosciuszko National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kosciuszko-national-park","lat":-36.13734922,"lng":148.2938293,"sellsTickets":"No","meetsWelfare":"Unspecified","programStart":"22 March 2025","programEnd":"22 September 2025","contactOffice":"Tumut","contactPhone":"(02) 6947 7000","contactEmail":"tumutrvc@environment.nsw.gov.au"},
+    {"id":139,"state":"NSW","region":"Sydney and Surrounds","name":"Ku-ring-gai Chase National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kuringgai-chase-national-park","lat":-33.6402469,"lng":151.1815882,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 August 2025","programEnd":"31 January 2026","contactOffice":"Forestville","contactPhone":"(02) 9451 3479","contactEmail":"npws.sydneynorth@environment.nsw.gov.au"},
+    {"id":140,"state":"NSW","region":"Sydney and Surrounds","name":"Ku-ring-gai Chase National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kuringgai-chase-national-park","lat":-33.6402469,"lng":151.1815882,"sellsTickets":"Yes","meetsWelfare":"Foxes","programStart":"4 September 2025","programEnd":"5 September 2025","contactOffice":"Forestville","contactPhone":"(02) 9451 3479","contactEmail":"npws.sydneynorth@environment.nsw.gov.au"},
+    {"id":141,"state":"NSW","region":"Country NSW","name":"Kwiambal National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kwiambal-national-park","lat":-29.170747,"lng":150.976226,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":142,"state":"NSW","region":"Country NSW","name":"Kwiambal National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kwiambal-national-park","lat":-29.170747,"lng":150.976226,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":143,"state":"NSW","region":"Country NSW","name":"Kwiambal National Park (Community Conservation Area)","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kwiambal-national-park-community-conservation-area/local-alerts","lat":-29.365018,"lng":151.000331,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":144,"state":"NSW","region":"Country NSW","name":"Kwiambal National Park (Community Conservation Area)","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/kwiambal-national-park-community-conservation-area/local-alerts","lat":-29.365018,"lng":151.000331,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":145,"state":"NSW","region":"Sydney and Surrounds","name":"Lane Cove National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/lane-cove-national-park","lat":-33.7499503,"lng":151.0905443,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 August 2025","programEnd":"31 January 2026","contactOffice":"Lane Cove","contactPhone":"(02) 8448 0400","contactEmail":"npws.northwesternsydney@environment.nsw.gov.au"},
+    {"id":146,"state":"NSW","region":"Country NSW","name":"Little Llangothlin Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/little-llangothlin-nature-reserve/local-alerts","lat":-30.082034,"lng":151.774398,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":147,"state":"NSW","region":"Country NSW","name":"Little Llangothlin Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/little-llangothlin-nature-reserve/local-alerts","lat":-30.082034,"lng":151.774398,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":148,"state":"NSW","region":"Country NSW","name":"Majors Creek State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/majors-creek-state-conservation-area","lat":-35.5837074,"lng":149.7756683,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":149,"state":"NSW","region":"Country NSW","name":"Manobalai Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/manobalai-nature-reserve","lat":-32.199808,"lng":150.593532,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Bulga","contactPhone":"(02) 6574 5555","contactEmail":"npws.wollemiyengo@environment.nsw.gov.au"},
+    {"id":150,"state":"NSW","region":"Country NSW","name":"Mares Forest National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mares-forest-national-park","lat":-34.28674172,"lng":149.909736,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":151,"state":"NSW","region":"Country NSW","name":"Mares Forest National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mares-forest-national-park","lat":-34.28674172,"lng":149.909736,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":152,"state":"NSW","region":"Sydney and Surrounds","name":"Marrangaroo National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/marrangaroo-national-park","lat":-33.46992188,"lng":150.0849701,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":153,"state":"NSW","region":"Country NSW","name":"Maryland National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/maryland-national-park/local-alerts","lat":-28.487729,"lng":152.087517,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":154,"state":"NSW","region":"Country NSW","name":"Maryland National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/maryland-national-park/local-alerts","lat":-28.487729,"lng":152.087517,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":155,"state":"NSW","region":"Snowy Mountains","name":"Meringo Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/meringo-nature-reserve","lat":-36.82202888,"lng":149.0495325,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"7 August 2025","programEnd":"5 February 2026","contactOffice":"Jindabyne","contactPhone":"(02) 6450 5600","contactEmail":"srvc@environment.nsw.gov.au"},
+    {"id":156,"state":"NSW","region":"South Coast","name":"Meroo National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/meroo-national-park","lat":-35.428832,"lng":150.395259,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"21 December 2025","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":157,"state":"NSW","region":"Snowy Mountains","name":"Merriangaah Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/merriangaah-nature-reserve","lat":-36.78285388,"lng":149.0240374,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"7 August 2025","programEnd":"5 February 2025","contactOffice":"Jindabyne","contactPhone":"(02) 6450 5600","contactEmail":"srvc@environment.nsw.gov.au"},
+    {"id":158,"state":"NSW","region":"South Coast","name":"Mimosa Rocks National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mimosa-rocks-national-park","lat":-36.66881559,"lng":149.9425362,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":159,"state":"NSW","region":"South Coast / Country NSW","name":"Monga National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/monga-national-park","lat":-35.62376244,"lng":149.9097823,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":160,"state":"NSW","region":"Country NSW","name":"Monga State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/monga-state-conservation-area","lat":-35.45735396,"lng":149.9038054,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":161,"state":"NSW","region":"North Coast","name":"Moonee Beach Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/moonee-beach-nature-reserve","lat":-30.184455,"lng":153.174497,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"22 August 2025","programEnd":"28 February 2026","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":162,"state":"NSW","region":"South Coast / Country NSW","name":"Morton National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/morton-national-park","lat":-35.22779429,"lng":150.2351036,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"28 July 2025","programEnd":"1 August 2026","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":163,"state":"NSW","region":"South Coast / Country NSW","name":"Morton National Park","type":"Disposal pit","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/morton-national-park","lat":-35.22779429,"lng":150.2351036,"sellsTickets":"No","meetsWelfare":"Unknown","programStart":"17 July 2025","programEnd":"16 January 2026","contactOffice":"Fitzroy Falls","contactPhone":"(02) 4887 8244","contactEmail":"npws.illawarrahighlands@environment.nsw.gov.au"},
+    {"id":164,"state":"NSW","region":"South Coast / Country NSW","name":"Morton National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/morton-national-park","lat":-35.22779429,"lng":150.2351036,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":165,"state":"NSW","region":"Country NSW","name":"Mount Canobolas State Conservation Area","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-canobolas-state-conservation-area","lat":-33.35274192,"lng":148.9883496,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 September 2025","programEnd":"28 February 2026","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":166,"state":"NSW","region":"North Coast","name":"Mount Hyland Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-hyland-nature-reserve","lat":-30.15953414,"lng":152.4436181,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":167,"state":"NSW","region":"North Coast","name":"Mount Hyland Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-hyland-nature-reserve","lat":-30.15953414,"lng":152.4436181,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":168,"state":"NSW","region":"North Coast","name":"Mount Hyland State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-hyland-state-conservation-area","lat":-30.21965914,"lng":152.4311822,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":169,"state":"NSW","region":"North Coast","name":"Mount Hyland State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-hyland-state-conservation-area","lat":-30.21965914,"lng":152.4311822,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":170,"state":"NSW","region":"Country NSW","name":"Mount Kaputar National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-kaputar-national-park","lat":-30.30756694,"lng":150.1736776,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"4 March 2025","programEnd":"31 October 2025","contactOffice":"Barwon","contactPhone":"(02) 6792 7300","contactEmail":"npws.barwon@environment.nsw.gov.au"},
+    {"id":171,"state":"NSW","region":"Country NSW","name":"Mount Kaputar National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-kaputar-national-park","lat":-30.30756694,"lng":150.1736776,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"4 March 2025","programEnd":"31 October 2025","contactOffice":"Barwon","contactPhone":"(02) 6792 7300","contactEmail":"npws.barwon@environment.nsw.gov.au"},
+    {"id":172,"state":"NSW","region":"North Coast","name":"Mount Neville Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-neville-nature-reserve","lat":-29.19376847,"lng":152.8007823,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":173,"state":"NSW","region":"North Coast","name":"Mount Neville Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-neville-nature-reserve","lat":-29.19376847,"lng":152.8007823,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6641 1500","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":174,"state":"NSW","region":"North Coast","name":"Mount Nullum Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-nullum-nature-reserve","lat":-28.37512094,"lng":153.36718,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"1 May 2025","programEnd":"1 September 2025","contactOffice":"Tweed Byron","contactPhone":"(02) 6639 8300","contactEmail":"npws.tweedbyron@environment.nsw.gov.au"},
+    {"id":175,"state":"NSW","region":"North Coast","name":"Mount Seaview Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-seaview-nature-reserve","lat":-31.33727219,"lng":152.1814217,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":176,"state":"NSW","region":"North Coast","name":"Mount Seaview Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mount-seaview-nature-reserve","lat":-31.33727219,"lng":152.1814217,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":177,"state":"NSW","region":"Sydney and Surrounds","name":"Mugii Murum-ban State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mugii-murumban-state-conservation-area","lat":-33.100048,"lng":150.054916,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":178,"state":"NSW","region":"Country NSW","name":"Mundoonen Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/mundoonen-nature-reserve","lat":-34.85117215,"lng":149.0561793,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"1 July 2025","programEnd":"12 February 2026","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":179,"state":"NSW","region":"Country NSW","name":"Munghorn Gap Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/munghorn-gap-nature-reserve/local-alerts","lat":-32.390975,"lng":149.839065,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Mudgee","contactPhone":"(02) 6370 9000","contactEmail":"npws.mudgee@environment.nsw.gov.au"},
+    {"id":180,"state":"NSW","region":"South Coast","name":"Murramarang National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/murramarang-national-park","lat":-35.58604906,"lng":150.3002533,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"21 December 2025","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":181,"state":"NSW","region":"South Coast","name":"Murramarang National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/murramarang-national-park","lat":-35.58604906,"lng":150.3002533,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":182,"state":"NSW","region":"South Coast","name":"Narrawallee Creek Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/narrawallee-creek-nature-reserve","lat":-35.287279,"lng":150.470182,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"21 December 2025","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":183,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Nattai National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nattai-national-park","lat":-34.235175,"lng":150.3798143,"sellsTickets":"No","meetsWelfare":"Cats","programStart":"23 September 2024","programEnd":"23 September 2025","contactOffice":"Hawkesbury-Nattai","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":184,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Nattai National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nattai-national-park","lat":-34.235175,"lng":150.3798143,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"23 September 2024","programEnd":"23 September 2025","contactOffice":"Hawkesbury-Nattai","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":185,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Nattai National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nattai-national-park","lat":-34.235175,"lng":150.3798143,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Hawkesbury-Nattai","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":186,"state":"NSW","region":"North Coast / Country NSW","name":"New England National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/new-england-national-park","lat":-30.52351318,"lng":152.4557267,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":187,"state":"NSW","region":"North Coast / Country NSW","name":"New England National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/new-england-national-park","lat":-30.52351318,"lng":152.4557267,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":188,"state":"NSW","region":"North Coast","name":"Ngambaa Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/ngambaa-nature-reserve","lat":-30.8991397,"lng":152.7797512,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":189,"state":"NSW","region":"North Coast","name":"Ngambaa Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/ngambaa-nature-reserve","lat":-30.8991397,"lng":152.7797512,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":190,"state":"NSW","region":"Country NSW","name":"Nullamanna National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nullamanna-national-park/local-alerts","lat":-29.58391,"lng":151.218202,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":191,"state":"NSW","region":"Country NSW","name":"Nullamanna National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nullamanna-national-park/local-alerts","lat":-29.58391,"lng":151.218202,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":192,"state":"NSW","region":"North Coast","name":"Nymboi-Binderay National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nymboibinderay-national-park","lat":-30.09292481,"lng":152.7462375,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":193,"state":"NSW","region":"North Coast","name":"Nymboi-Binderay National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nymboibinderay-national-park","lat":-30.09292481,"lng":152.7462375,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":194,"state":"NSW","region":"North Coast / Country NSW","name":"Nymboida National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nymboida-national-park","lat":-29.65033403,"lng":152.397999,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6739 0700","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":195,"state":"NSW","region":"North Coast / Country NSW","name":"Nymboida National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nymboida-national-park","lat":-29.65033403,"lng":152.397999,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6739 0700","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":196,"state":"NSW","region":"North Coast / Country NSW","name":"Nymboida National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nymboida-national-park","lat":-29.65033403,"lng":152.397999,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":197,"state":"NSW","region":"North Coast / Country NSW","name":"Nymboida National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/nymboida-national-park","lat":-29.65033403,"lng":152.397999,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":198,"state":"NSW","region":"Country NSW","name":"Oak Creek Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/oak-creek-nature-reserve","lat":-35.04249629,"lng":148.678024,"sellsTickets":"No","meetsWelfare":"Dingoes","programStart":"3 March 2025","programEnd":"2 September 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":199,"state":"NSW","region":"South Coast","name":"Parma Creek Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/parma-creek-nature-reserve","lat":-34.99123975,"lng":150.4967653,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 March 2025","programEnd":"31 October 2025","contactOffice":"Nowra","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":200,"state":"NSW","region":"Sydney and Surrounds","name":"Parr State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/parr-state-conservation-area","lat":-33.229123,"lng":150.761332,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Bulga","contactPhone":"(02) 6574 5555","contactEmail":"npws.wollemiyengo@environment.nsw.gov.au"},
+    {"id":201,"state":"NSW","region":"Snowy Mountains","name":"Paupong Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/paupong-nature-reserve","lat":-34.99123975,"lng":150.4967653,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"7 August 2025","programEnd":"5 February 2026","contactOffice":"Jindabyne","contactPhone":"(02) 6450 5600","contactEmail":"srvc@environment.nsw.gov.au"},
+    {"id":202,"state":"NSW","region":"North Coast","name":"Pee Dee Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/pee-dee-nature-reserve","lat":-30.77929032,"lng":152.4219739,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kempsey","contactPhone":"(02) 6561 6700","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":203,"state":"NSW","region":"North Coast","name":"Pee Dee Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/ pee-dee-nature-reserve","lat":-30.77929032,"lng":152.4219739,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kempsey","contactPhone":"(02) 6561 6700","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":204,"state":"NSW","region":"Country NSW","name":"Pilliga East State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/pilliga-east-state-conservation-area","lat":-30.793285,"lng":149.594015,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"24 June 2025","programEnd":"14 September 2025","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":205,"state":"NSW","region":"Country NSW","name":"Pilliga National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/pilliga-national-park","lat":-30.53519099,"lng":148.9962762,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"Ongoing","programEnd":"Ongoing","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":206,"state":"NSW","region":"Country NSW","name":"Pilliga Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/pilliga-nature-reserve","lat":-30.96256435,"lng":149.3630262,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"24 June 2025","programEnd":"14 September 2025","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":207,"state":"NSW","region":"Country NSW","name":"Pilliga State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/pilliga-state-conservation-area","lat":-30.62090909,"lng":149.1972947,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"Ongoing","programEnd":"Ongoing","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":208,"state":"NSW","region":"Snowy Mountains","name":"Quidong Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/quidong-nature-reserve","lat":-36.87196313,"lng":149.0554607,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"7 August 2025","programEnd":"5 February 2026","contactOffice":"Jindabyne","contactPhone":"(02) 6450 5600","contactEmail":"srvc@environment.nsw.gov.au"},
+    {"id":209,"state":"NSW","region":"North Coast","name":"Ramornie National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/ramornie-national-park","lat":-29.72321434,"lng":152.6694365,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6739 0700","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":210,"state":"NSW","region":"North Coast","name":"Ramornie National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/ramornie-national-park","lat":-29.72321434,"lng":152.6694365,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Grafton","contactPhone":"(02) 6739 0700","contactEmail":"npws.clarence@environment.nsw.gov.au"},
+    {"id":211,"state":"NSW","region":"North Coast","name":"Richmond Range National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/richmond-range-national-park","lat":-28.68960256,"lng":152.7481628,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kyogle","contactPhone":"(02) 6632 0000","contactEmail":"npws.richmondriver@environment.nsw.gov.au"},
+    {"id":212,"state":"NSW","region":"North Coast","name":"Richmond Range National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/richmond-range-national-park","lat":-28.68960256,"lng":152.7481628,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kyogle","contactPhone":"(02) 6632 0000","contactEmail":"npws.richmondriver@environment.nsw.gov.au"},
+    {"id":213,"state":"NSW","region":"Sydney and Surrounds / South Coast","name":"Royal National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/royal-national-park/local-alerts","lat":-34.128442,"lng":151.067128,"sellsTickets":"Yes","meetsWelfare":"Foxes","programStart":"3 September 2025","programEnd":"6 September 2025","contactOffice":"Audley","contactPhone":"(02) 9542 0632","contactEmail":"npws.royal@environment.nsw.gov.au"},
+    {"id":214,"state":"NSW","region":"Snowy Mountains","name":"Scabby Range Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/scabby-range-nature-reserve","lat":-35.7841069,"lng":148.8697605,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"1 September 2025","programEnd":"28 February 2026","contactOffice":"Tumut","contactPhone":"(02) 6947 7000","contactEmail":"tumutrvc@environment.nsw.gov.au"},
+    {"id":215,"state":"NSW","region":"Country NSW","name":"Serpentine Aboriginal Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/serpentine-aboriginal-area","lat":-30.49748276,"lng":152.2895646,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":216,"state":"NSW","region":"Country NSW","name":"Serpentine Aboriginal Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/serpentine-aboriginal-area","lat":-30.49748276,"lng":152.2895646,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Coffs Harbour","contactPhone":"(02) 6652 0900","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":217,"state":"NSW","region":"South Coast","name":"Seven Mile Beach National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/seven-mile-beach-national-park","lat":-34.811921,"lng":150.757856,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"21 July 2025","programEnd":"21 December 2025","contactOffice":"Shoalhaven","contactPhone":"(02) 4428 6300","contactEmail":"npws.shoalhaven@environment.nsw.gov.au"},
+    {"id":218,"state":"NSW","region":"Country NSW","name":"Severn River Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/severn-river-nature-reserve/local-alerts","lat":-29.513221,"lng":151.249987,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":219,"state":"NSW","region":"Country NSW","name":"Severn River Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/severn-river-nature-reserve/local-alerts","lat":-29.513221,"lng":151.249987,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":220,"state":"NSW","region":"South Coast / Snowy Mountains","name":"South East Forest National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/south-east-forest-national-park","lat":-37.0189204,"lng":149.4643933,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":221,"state":"NSW","region":"South Coast / Snowy Mountains","name":"South East Forest National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/south-east-forest-national-park","lat":-37.0189204,"lng":149.4643933,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"14 April 2025","programEnd":"30 September 2025","contactOffice":"Bombala","contactPhone":"(02) 6458 5900","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":222,"state":"NSW","region":"Sydney and Surrounds","name":"Sydney Harbour National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/sydney-harbour-national-park","lat":-33.81487632,"lng":151.2901956,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"1 August 2025","programEnd":"31 January 2026","contactOffice":"Middle Head","contactPhone":"(02) 9960 6266","contactEmail":"npws.sydneynorth@environment.nsw.gov.au"},
+    {"id":223,"state":"NSW","region":"Country NSW","name":"Tallaganda National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/tallaganda-national-park","lat":-35.72560105,"lng":149.4742123,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"Ongoing","programEnd":"1 December 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":224,"state":"NSW","region":"Country NSW","name":"Tallaganda State Conservation Area","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/tallaganda-state-conservation-area","lat":-35.38221357,"lng":149.6055359,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"Ongoing","programEnd":"1 December 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":225,"state":"NSW","region":"North Coast / Country NSW","name":"The Castles Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/the-castles-nature-reserve","lat":-30.98553254,"lng":152.3222792,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kempsey","contactPhone":"(02) 6561 6700","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":226,"state":"NSW","region":"North Coast / Country NSW","name":"The Castles Nature Reserve","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/the-castles-nature-reserve","lat":-30.98553254,"lng":152.3222792,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kempsey","contactPhone":"(02) 6561 6700","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":227,"state":"NSW","region":"North Coast / Country NSW","name":"The Cells State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/the-cells-state-conservation-area","lat":-31.43550261,"lng":152.1086795,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":228,"state":"NSW","region":"North Coast / Country NSW","name":"The Cells State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/the-cells-state-conservation-area","lat":-31.43550261,"lng":152.1086795,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":229,"state":"NSW","region":"Country NSW","name":"Timmallallie National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/timmallallie-national-park","lat":-30.86262986,"lng":149.246445,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"24 June 2025","programEnd":"14 September 2025","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":230,"state":"NSW","region":"Country NSW","name":"Tinderry Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/tinderry-nature-reserve","lat":-35.669235,"lng":149.28783,"sellsTickets":"No","meetsWelfare":"Pigs","programStart":"31 July 2025","programEnd":"31 October 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":231,"state":"NSW","region":"Country NSW","name":"Tollingo Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/tollingo-nature-reserve","lat":-32.69112511,"lng":146.7913977,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"17 March 2025","programEnd":"17 September 2025","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":232,"state":"NSW","region":"Country NSW","name":"Torrington State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/torrington-state-conservation-area/local-alerts","lat":-29.229917,"lng":151.552935,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":233,"state":"NSW","region":"Country NSW","name":"Torrington State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/torrington-state-conservation-area/local-alerts","lat":-29.229917,"lng":151.552935,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":234,"state":"NSW","region":"Sydney and Surrounds","name":"Towra Point Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/towra-point-nature-reserve/local-alerts","lat":-34.025306,"lng":151.182857,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"30 August 2025","programEnd":"31 March 2026","contactOffice":"Sydney South","contactPhone":"(02) 9337 5511","contactEmail":"npws.sydneysouth@environment.nsw.gov.au"},
+    {"id":235,"state":"NSW","region":"Sydney and Surrounds","name":"Turon National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/turon-national-park","lat":-33.19556942,"lng":149.9376632,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":236,"state":"NSW","region":"Sydney and Surrounds","name":"Turon National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/turon-national-park","lat":-33.19556942,"lng":149.9376632,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":237,"state":"NSW","region":"Sydney and Surrounds / South Coast / Country NSW","name":"Upper Nepean State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/upper-nepean-state-conservation-area/local-alerts","lat":-34.303608,"lng":150.808082,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Glenbrook","contactPhone":"(02) 4720 6200","contactEmail":"npws.hawkesburynattai@environment.nsw.gov.au"},
+    {"id":238,"state":"NSW","region":"South Coast / Snowy Mountains","name":"Wadbilliga National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/wadbilliga-national-park","lat":-36.38616116,"lng":149.6198928,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"23 February 2026","contactOffice":"Merimbula","contactPhone":"(02) 6495 5000","contactEmail":"npws.sapphirecoast@environment.nsw.gov.au"},
+    {"id":239,"state":"NSW","region":"Country NSW","name":"Warra National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warra-national-park/local-alerts","lat":-29.991475,"lng":151.94048,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":240,"state":"NSW","region":"Country NSW","name":"Warra National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warra-national-park/local-alerts","lat":-29.991475,"lng":151.94048,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":241,"state":"NSW","region":"Country NSW","name":"Warrabah National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warrabah-national-park/local-alerts","lat":-30.566082,"lng":150.915515,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"11 August 2025","programEnd":"11 December 2025","contactOffice":"New England","contactPhone":"(02) 6738 9100","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":242,"state":"NSW","region":"Outback NSW","name":"Warrambool State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warrambool-state-conservation-area","lat":-29.43628381,"lng":148.1778867,"sellsTickets":"No","meetsWelfare":"Pigs","programStart":"3 May 2025","programEnd":"31 December 2025","contactOffice":"Barwon","contactPhone":"(02) 6792 7300","contactEmail":"npws.barwon@environment.nsw.gov.au"},
+    {"id":243,"state":"NSW","region":"Outback NSW","name":"Warrambool State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warrambool-state-conservation-area","lat":-29.43628381,"lng":148.1778867,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"3 May 2025","programEnd":"31 December 2025","contactOffice":"Barwon","contactPhone":"(02) 6792 7300","contactEmail":"npws.barwon@environment.nsw.gov.au"},
+    {"id":244,"state":"NSW","region":"Country NSW","name":"Warrumbungle National Park","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warrumbungle-national-park","lat":-31.31495954,"lng":148.9849112,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"Ongoing","programEnd":"Ongoing","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":245,"state":"NSW","region":"Country NSW","name":"Warrumbungle National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/warrumbungle-national-park","lat":-31.31495954,"lng":148.9849112,"sellsTickets":"Yes","meetsWelfare":"Foxes","programStart":"Ongoing","programEnd":"Ongoing","contactOffice":"Castlereagh","contactPhone":"(02) 6843 4000","contactEmail":"npws.cumberland@environment.nsw.gov.au"},
+    {"id":246,"state":"NSW","region":"North Coast / Country NSW","name":"Washpool National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/washpool-national-park/local-alerts","lat":-29.488389,"lng":152.330756,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":247,"state":"NSW","region":"North Coast / Country NSW","name":"Washpool National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/washpool-national-park/local-alerts","lat":-29.488389,"lng":152.330756,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":248,"state":"NSW","region":"Country NSW","name":"Washpool State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/washpool-state-conservation-area/local-alerts","lat":-29.250204,"lng":152.19634,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":249,"state":"NSW","region":"Country NSW","name":"Washpool State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/washpool-state-conservation-area/local-alerts","lat":-29.250204,"lng":152.19634,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"19 October 2025","contactOffice":"Northern Tablelands","contactPhone":"(02) 6739 0700","contactEmail":"npws.northerntablelands@environment.nsw.gov.au"},
+    {"id":250,"state":"NSW","region":"Country NSW","name":"Watsons Creek National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/watsons-creek-national-park/local-alerts","lat":-30.719914,"lng":151.07198,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"11 August 2025","programEnd":"11 December 2025","contactOffice":"New England","contactPhone":"(02) 6738 9100","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":251,"state":"NSW","region":"Country NSW","name":"Watsons Creek Nature Reserve","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/watsons-creek-nature-reserve/local-alerts","lat":-30.792168,"lng":151.032257,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"11 August 2025","programEnd":"11 December 2025","contactOffice":"New England","contactPhone":"(02) 6738 9100","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":252,"state":"NSW","region":"Country NSW","name":"Watsons Creek State Conservation Area","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/watsons-creek-state-conservation-area/local-alerts","lat":-30.721006,"lng":151.072101,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"11 August 2025","programEnd":"11 December 2025","contactOffice":"New England","contactPhone":"(02) 6738 9100","contactEmail":"npws.coffscoast@environment.nsw.gov.au"},
+    {"id":253,"state":"NSW","region":"Country NSW","name":"Wee Jasper Nature Reserve","type":"Unspecified","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/wee-jasper-nature-reserve","lat":-35.09745202,"lng":148.6553213,"sellsTickets":"No","meetsWelfare":"Dingoes","programStart":"3 March 2025","programEnd":"2 September 2025","contactOffice":"Queanbeyan","contactPhone":"(02) 6229 7166","contactEmail":"npws.alpinequeanbeyan@environment.nsw.gov.au"},
+    {"id":254,"state":"NSW","region":"North Coast / Country NSW","name":"Werrikimbe National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/werrikimbe-national-park","lat":-31.20080795,"lng":152.2535101,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":255,"state":"NSW","region":"North Coast / Country NSW","name":"Werrikimbe National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/werrikimbe-national-park","lat":-31.20080795,"lng":152.2535101,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Port Macquarie","contactPhone":"(02) 6588 5555","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":256,"state":"NSW","region":"North Coast / Country NSW","name":"Willi Willi National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/willi-willi-national-park","lat":-31.16338678,"lng":152.4482731,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kempsey","contactPhone":"(02) 6561 6700","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":257,"state":"NSW","region":"North Coast / Country NSW","name":"Willi Willi National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/willi-willi-national-park","lat":-31.16338678,"lng":152.4482731,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"8 June 2025","programEnd":"8 December 2025","contactOffice":"Kempsey","contactPhone":"(02) 6561 6700","contactEmail":"npws.hastingsmacleay@environment.nsw.gov.au"},
+    {"id":258,"state":"NSW","region":"Sydney and Surrounds / Country NSW","name":"Winburndale Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/winburndale-nature-reserve","lat":-33.33750374,"lng":149.7866293,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"1 September 2025","programEnd":"28 February 2026","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":259,"state":"NSW","region":"Country NSW","name":"Woggoon Nature Reserve","type":"Ground / CPE baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/woggoon-nature-reserve","lat":-32.81025961,"lng":146.9359401,"sellsTickets":"No","meetsWelfare":"Foxes","programStart":"17 March 2025","programEnd":"17 September 2025","contactOffice":"Bathurst","contactPhone":"(02) 6332 7640","contactEmail":"npws.centralwest@environment.nsw.gov.au"},
+    {"id":260,"state":"NSW","region":"Sydney and Surrounds / North Coast / Country NSW","name":"Wollemi National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/wollemi-national-park","lat":-32.91293479,"lng":150.4735495,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"2 May 2025","programEnd":"1 May 2026","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":261,"state":"NSW","region":"Sydney and Surrounds / North Coast / Country NSW","name":"Wollemi National Park","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/wollemi-national-park","lat":-32.91293479,"lng":150.4735495,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Kanangra / Oberon","contactPhone":"(02) 6336 6200","contactEmail":"npws.kanangra@environment.nsw.gov.au"},
+    {"id":262,"state":"NSW","region":"North Coast","name":"Wollemi State Conservation Area","type":"Aerial baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/wollemi-state-conservation-area/local-alerts","lat":-32.751297,"lng":150.830687,"sellsTickets":"Yes","meetsWelfare":"Dingoes and foxes","programStart":"25 August 2025","programEnd":"7 September 2025","contactOffice":"Bulga","contactPhone":"(02) 6574 5555","contactEmail":"npws.wollemiyengo@environment.nsw.gov.au"},
+    {"id":263,"state":"NSW","region":"North Coast","name":"Yuraygir National Park","type":"Ground baiting","link":"https://www.nationalparks.nsw.gov.au/visit-a-park/parks/yuraygir-national-park","lat":-29.745462,"lng":153.2648676,"sellsTickets":"No","meetsWelfare":"Dingoes and foxes","programStart":"30 December 2024","programEnd":"31 July 2025","contactOffice":"Grafton","contactPhone":"(02) 6739 0700","contactEmail":"npws.clarence@environment.nsw.gov.au"}];
+
+    // Initialize Application
+    function init() {
+        state.attractionData = attractionData;
+        populateFilters();
+        
+        // DEFER MAP INIT: Wrap initMap in a setTimeout to push it to the end
+        // of the event loop. This ensures the browser has rendered the layout
+        // and the map container has a non-zero height before Leaflet runs.
+        setTimeout(initMap, 0);
+
+        const mapContainer = elements.mapView;
+        const resizeObserver = new ResizeObserver(() => {
+            if (mapContainer.offsetWidth > 0) {
+                if (state.map) {
+                    state.map.invalidateSize();
+                    // This part only runs once on the initial load to set the view
+                    if (!state.mapInitialized) {
+                        state.map.fitBounds(stateBounds.NSW, { padding: [50, 50]});
+                        applyFilters();
+                        hideLoading();
+                        state.mapInitialized = true; // Flag to prevent re-centering
+                    }
+                }
+                // ROBUSTNESS FIX: By removing .disconnect(), this observer will
+                // now handle all resizes, including toggling the view on mobile.
+            }
+        });
+
+        resizeObserver.observe(mapContainer);
+        setupEventListeners();
+        updateMobileToggleButton();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    // Populate Filter Dropdowns
+    function populateFilters() {
+        const types = [...new Set(attractionData.map(a => a.type))].sort();
+        const allRegions = new Set();
+        attractionData.forEach(item => {
+            if (item.region) {
+                item.region.split(' / ').forEach(region => allRegions.add(region.trim()));
+            }
+        });
+        const sortedRegions = [...allRegions].sort();
+
+        sortedRegions.forEach(r => {
+            const option = document.createElement('option');
+            option.value = r;
+            option.textContent = r;
+            elements.regionFilter.appendChild(option);
+        });
+
+        types.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t;
+            option.textContent = t;
+            elements.typeFilter.appendChild(option);
+        });
+    }
+
+    // Initialize Map
+    function initMap() {
+        state.map = L.map(elements.mapView, {
+            center: [-33.0, 149.0],
+            zoom: 6,
+            zoomControl: false,
+            scrollWheelZoom: false
+        });
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors © CARTO | Data: Animal Liberation',
+            maxZoom: 18
+        }).addTo(state.map);
+    }
+    
+    // Create Markers
+    function createMarkers(data) {
+        state.markers.forEach(marker => state.map.removeLayer(marker));
+        state.markers = [];
+        
+        data.forEach(attraction => {
+            if (!attraction.lat || !attraction.lng) return;
+            
+            let emoji = "🐾";
+            let bgColor = "#9CA3AF";
+
+            if (attraction.type && attraction.type.toLowerCase().includes("aerial")) {
+                emoji = "✈️";
+                bgColor = "#e1442a";
+            } else if (attraction.type && attraction.type.toLowerCase().includes("ground")) {
+                emoji = "💀";
+                bgColor = "#f3a860";
+            }
+
+            const icon = L.divIcon({
+                className: '',
+                html: `<div style="background: ${bgColor}; width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${emoji}</div>`,
+                iconSize: [46, 46],
+                iconAnchor: [23, 23]
+            });
+            
+            const marker = L.marker([attraction.lat, attraction.lng], { 
+                icon: icon,
+                attractionId: attraction.id 
+            });
+            
+            marker.bindPopup(createPopupContent(attraction), { minWidth: 300, maxWidth: 320, className: 'custom-popup' });
+            
+            marker.on('click', () => {
+                state.activeListItemId = attraction.id;
+                const listItem = elements.listView.querySelector(`.list-item[data-id="${attraction.id}"]`);
+                if (listItem) {
+                    const currentlyActive = elements.listView.querySelector('.list-item.active');
+                    if (currentlyActive) currentlyActive.classList.remove('active');
+                    listItem.classList.add('active');
+                    listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+            
+            marker.addTo(state.map);
+            state.markers.push(marker);
+        });
+    }
+
+    // Create Popup Content
+    function createPopupContent(attraction) {
+        const isAerial = attraction.type.toLowerCase().includes("aerial");
+        const headerClass = isAerial ? 'direct-profit' : 'indirect-profit';
+        const headerText = isAerial ? '✈️ Aerial Baiting' : '💀 Ground Baiting';
+        let speciesBadge = (attraction.meetsWelfare && attraction.meetsWelfare !== 'Unknown') ?
+            `<span class="popup-badge" style="background:#E6F4EA; color:#1B5E20; border:1px solid #A5D6A7;">🎯 Target: ${attraction.meetsWelfare}</span>` :
+            `<span class="popup-badge" style="background:#E0E0E0; color:#424242; border:1px solid #BDBDBD;">🎯 Target: Unknown</span>`;
+
+        return `
+            <div class="popup-header ${headerClass}">${headerText}</div>
+            <div class="popup-body">
+                <div class="popup-title">${attraction.name}</div>
+                <div class="popup-meta">
+                    <span class="popup-badge type">${attraction.type}</span>
+                    <span class="popup-badge" style="background-color: #f0f0f0;">${attraction.region}</span>
+                    ${speciesBadge}
+                </div>
+                <div style="font-size:0.85rem; margin-bottom:0.5rem;">
+                    <strong>Program Dates:</strong> ${attraction.programStart || 'N/A'} → ${attraction.programEnd || 'N/A'}<br/>
+                    <strong>Contact:</strong> ${attraction.contactOffice || 'N/A'}<br/>
+                    <strong>Phone:</strong> ${attraction.contactPhone || 'N/A'}<br/>
+                    <strong>Email:</strong> <a href="mailto:${attraction.contactEmail}">${attraction.contactEmail || 'N/A'}</a>
+                </div>
+                <a href="${attraction.link}" target="_blank" rel="noopener" class="popup-link">View NPWS Alert ↗</a>
+            </div>
+        `;
+    }
+
+    // Filter Data based on search and dropdowns
+    function getFilteredData() {
+        const searchTerm = elements.searchInput.value.toLowerCase();
+        const stateFilter = elements.stateFilter.value;
+        const typeFilter = elements.typeFilter.value;
+        const regionFilter = elements.regionFilter.value;
+        
+        return state.attractionData.filter(attraction => 
+            (!searchTerm || 
+                attraction.name.toLowerCase().includes(searchTerm) ||
+                attraction.type.toLowerCase().includes(searchTerm) ||
+                (attraction.region && attraction.region.toLowerCase().includes(searchTerm)) ||
+                (attraction.meetsWelfare && attraction.meetsWelfare.toLowerCase().includes(searchTerm))) &&
+            (stateFilter === 'all' || attraction.state === stateFilter) &&
+            (typeFilter === 'all' || attraction.type === typeFilter) &&
+            (regionFilter === 'all' || (attraction.region && attraction.region.includes(regionFilter)))
+        );
+    }
+    
+    // REFINED: Update list view with semantic class names
+    function updateListView(data) {
+        elements.listView.innerHTML = ''; 
+
+        if (data.length === 0) {
+            elements.listView.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--gray-500);">No programs visible in the current map view. Try zooming out.</div>';
+            return;
+        }
+
+        const groupedByRegion = data.reduce((acc, item) => {
+            if (item.region && item.region.trim() !== '') {
+                const regions = item.region.split(' / ').map(r => r.trim());
+                regions.forEach(regionName => {
+                    if (!acc[regionName]) {
+                        acc[regionName] = [];
+                    }
+                    acc[regionName].push(item);
+                });
+            }
+            return acc;
+        }, {});
+
+        const sortedRegions = Object.keys(groupedByRegion).sort();
+
+        sortedRegions.forEach(regionName => {
+            const items = groupedByRegion[regionName];
+            const regionContainer = document.createElement('div');
+            regionContainer.className = 'list-region-group';
+
+            const headerButton = document.createElement('button');
+            headerButton.className = 'list-region-header';
+            headerButton.setAttribute('aria-expanded', 'true');
+            headerButton.innerHTML = `<span class="list-region-title">${regionName}</span><span class="list-region-count">${items.length}</span>`;
+            
+            const body = document.createElement('div');
+            body.className = 'list-region-body';
+
+            items.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+                const listItem = document.createElement('button');
+                listItem.className = 'list-item';
+                listItem.dataset.id = item.id;
+                if (item.id === state.activeListItemId) listItem.classList.add('active');
+
+                listItem.innerHTML = `
+                    <div class="list-item-header"><span class="list-item-name">${item.name}</span></div>
+                    <div style="font-size: 0.85rem; color: var(--gray-600);">
+                        Method: ${item.type || 'N/A'}
+                    </div>
+                `;
+                
+                listItem.addEventListener('click', () => {
+                    const targetMarker = state.markers.find(m => m.options.attractionId === item.id);
+                    if (targetMarker) {
+                        state.map.setView(targetMarker.getLatLng(), 13);
+                        targetMarker.openPopup();
+                        state.activeListItemId = item.id;
+                        const currentlyActive = elements.listView.querySelector('.list-item.active');
+                        if (currentlyActive) currentlyActive.classList.remove('active');
+                        listItem.classList.add('active');
+                    }
+                });
+                body.appendChild(listItem);
+            });
+
+            regionContainer.append(headerButton, body);
+            elements.listView.appendChild(regionContainer);
+            
+            body.style.height = `${body.scrollHeight}px`;
+            headerButton.addEventListener('click', () => {
+                const isExpanded = headerButton.getAttribute('aria-expanded') === 'true';
+                headerButton.setAttribute('aria-expanded', !isExpanded);
+                body.style.height = isExpanded ? '0' : `${body.scrollHeight}px`;
+            });
+        });
+    }
+
+    // Main controller function
+    function applyFilters() {
+        state.filteredData = getFilteredData();
+        
+        elements.resultsCount.innerHTML = `Showing <strong>${state.filteredData.length}</strong> of <strong>${state.attractionData.length}</strong> programs.`;
+        
+        const isFiltered = elements.searchInput.value !== '' || elements.typeFilter.value !== 'all' || elements.regionFilter.value !== 'all';
+        elements.clearFilters.classList.toggle('hidden', !isFiltered);
+
+        createMarkers(state.filteredData);
+        updateListFromMapBounds(); 
+    }
+
+    // Mobile View Logic
+    function updateMobileToggleButton() {
+        if (!elements.mobileViewToggle) return;
+        elements.mobileViewToggle.innerHTML = state.mobileView === 'list' ? 
+            `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> View Map` : 
+            `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> View List`;
+    }
+
+    function setMobileView(view) {
+        state.mobileView = view;
+        document.body.classList.toggle('viewing-list', view === 'list');
+        // REMOVED: The active ResizeObserver now handles this more reliably.
+        updateMobileToggleButton();
+    }
+    
+    const updateListFromMapBounds = debounce(() => {
+        if (!state.map || !state.filteredData) return;
+        const bounds = state.map.getBounds();
+        const visibleData = state.filteredData.filter(item => bounds.contains([item.lat, item.lng]));
+        updateListView(visibleData);
+    }, 200);
+
+    function clearAllFilters() {
+        elements.searchInput.value = '';
+        elements.stateFilter.value = 'NSW';
+        elements.typeFilter.value = 'all';
+        elements.regionFilter.value = 'all';
+        state.activeListItemId = null;
+        applyFilters();
+        state.map.fitBounds(stateBounds.NSW, { padding: [50, 50] });
+    }
+
+    function hideLoading() {
+        elements.mapLoading.style.display = 'none';
+        state.isLoading = false;
+    }
+
+    function startGuide() {
+        const driver = window.driver.js.driver;
+        driver({
+            showProgress: true,
+            steps: [
+                { element: '.tracker-header', popover: { title: 'Welcome to the 1080 Baiting Map', description: 'This interactive map shows 1080 baiting programs across NSW National Parks.' }},
+                { element: '.search-container', popover: { title: 'Search & Filter', description: 'Use the search bar and dropdowns to narrow down the programs.' }},
+                { element: '#list-panel', popover: { title: 'Synced List', description: 'This list automatically updates to show only the locations visible on the map. Click any item to zoom to it.' }},
+                { element: '.legend-section', popover: { title: 'Map Legend', description: 'The marker colors indicate the baiting method used at each site.' }}
+            ]
+        }).drive();
+    }
+
+    function setupEventListeners() {
+        if (state.map) {
+            state.map.on('moveend', updateListFromMapBounds);
+        }
+        
+        elements.mobileViewToggle.addEventListener('click', () => {
+            setMobileView(state.mobileView === 'map' ? 'list' : 'map');
+        });
+        
+        document.getElementById('zoom-in-btn').addEventListener('click', () => state.map.zoomIn());
+        document.getElementById('zoom-out-btn').addEventListener('click', () => state.map.zoomOut());
+        document.getElementById('home-btn').addEventListener('click', () => state.map.fitBounds(stateBounds.NSW, { padding: [50, 50] }));
+        
+        elements.searchInput.addEventListener('input', debounce(applyFilters, 300));
+        elements.stateFilter.addEventListener('change', applyFilters);
+        elements.typeFilter.addEventListener('change', applyFilters);
+        elements.regionFilter.addEventListener('change', applyFilters);
+        elements.clearFilters.addEventListener('click', clearAllFilters);
+        
+        document.getElementById('start-guide-btn').addEventListener('click', startGuide);
+        
+        elements.mapView.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                state.map.scrollWheelZoom.enable();
+                setTimeout(() => state.map.scrollWheelZoom.disable(), 1000);
+            }
+        });
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    } 
+</script>
+</body>
+</html>
